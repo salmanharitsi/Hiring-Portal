@@ -1,10 +1,43 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Image from "next/image";
+
 export default function VerifyPage() {
+  const sp = useSearchParams();
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const q = sp.get("email");
+    if (q) {
+      setEmail(q);
+      return;
+    }
+    try {
+      const stored = sessionStorage.getItem("pendingEmail");
+      if (stored) setEmail(stored);
+    } catch {}
+  }, [sp]);
+
   return (
-    <div className="text-center space-y-2">
-      <h1 className="text-xl font-semibold">Cek email kamu</h1>
-      <p className="text-sm text-zinc-500">
-        Kami sudah mengirim link login. Link berlaku 20 menit.
-      </p>
+    <div className="text-center flex flex-col items-center gap-2">
+      <div className="space-y-1">
+        <h1 className="text-[#404040] text-2xl font-bold">
+          Periksa Email Anda
+        </h1>
+        <p className="text-xs text-[#4C4C4C]">
+          Kami sudah mengirimkan link register ke{" "}
+          <span className="font-bold">{email ?? ""}</span> yang berlaku dalam{" "}
+          <span className="font-bold">30 menit</span>
+        </p>
+      </div>
+      <Image
+        src="/images/verify-vector.svg"
+        alt="Verify Vector"
+        width={184}
+        height={184}
+      />
     </div>
   );
 }

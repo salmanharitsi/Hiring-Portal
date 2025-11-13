@@ -48,8 +48,8 @@ export default function RegisterPage() {
   }, [urlError]);
 
   useEffect(() => {
-    setMsg(null); 
-    setExists(null); 
+    setMsg(null);
+    setExists(null);
     setChecking(false);
 
     const clean = email.trim().toLowerCase();
@@ -90,7 +90,7 @@ export default function RegisterPage() {
         if (myToken !== checkTokenRef.current) return;
         setChecking(false);
       }
-    }, 400); 
+    }, 400);
 
     return () => clearTimeout(t);
   }, [email, supabase]);
@@ -113,7 +113,7 @@ export default function RegisterPage() {
             Email ini sudah terdaftar sebagai akun di Rakamin Academy.
           </span>{" "}
           <a
-            className="text-emerald-700 font-medium underline"
+            className="text-[#E11428] font-bold"
             href={`/login?prefill=${encodeURIComponent(
               cleanEmail
             )}&from=register_exists`}
@@ -146,7 +146,7 @@ export default function RegisterPage() {
               Email ini sudah terdaftar sebagai akun di Rakamin Academy.
             </span>{" "}
             <a
-              className="text-emerald-700 font-medium underline"
+              className="text-[#E11428] font-bold"
               href={`/login?prefill=${encodeURIComponent(
                 cleanEmail
               )}&from=register_exists`}
@@ -173,7 +173,8 @@ export default function RegisterPage() {
         return;
       }
 
-      window.location.href = "/verify";
+      sessionStorage.setItem("pendingEmail", cleanEmail);
+      window.location.href = `/verify`;
     } finally {
       setLoading(false);
     }
@@ -213,7 +214,7 @@ export default function RegisterPage() {
       </div>
 
       {msg && (
-        <div className="text-sm text-red-600 border border-red-200 bg-red-50 rounded-md p-2">
+        <div className="text-xs text-[#E11428] border border-[#F5B1B7] bg-[#FFFAFA] rounded-sm py-0.5 text-center">
           {msg}
         </div>
       )}
@@ -248,17 +249,7 @@ export default function RegisterPage() {
             {checking ? (
               <span className="text-zinc-500">Memeriksa...</span>
             ) : exists === true ? (
-              <span className="text-amber-600">
-                Email sudah terdaftar —{" "}
-                <a
-                  className="underline font-medium"
-                  href={`/login?prefill=${encodeURIComponent(
-                    email.trim().toLowerCase()
-                  )}&from=register_exists`}
-                >
-                  masuk di sini
-                </a>
-              </span>
+              <span className="text-amber-600">Email sudah terdaftar</span>
             ) : (
               <span className="text-emerald-600 flex items-center gap-1">
                 ✓ Alamat email teridentifikasi

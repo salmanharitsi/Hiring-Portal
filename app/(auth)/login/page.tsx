@@ -27,30 +27,42 @@ export default function LoginPage() {
     []
   );
 
-  useEffect(() => {
-    const pf = sp.get("prefill");
-    if (pf) setEmail(pf.toLowerCase().trim());
-  }, [sp]);
-
+  // Handle URL errors FIRST - before any other effect runs
   const urlError = sp.get("error");
   useEffect(() => {
     if (!urlError) return;
+
     const errors: Record<string, ReactNode> = {
       verification_link_expired:
         "Link login sudah kadaluwarsa. Silakan minta link baru.",
       unauthenticated: "Silakan login terlebih dahulu.",
       exchange_failed:
         "Gagal memproses login. Pastikan membuka link di browser yang sama saat kamu meminta link.",
-      no_code: "Link tidak valid.",
+      no_code: (
+        <>
+          Link <span className="font-bold">sudah kadaluarsa</span>, silahkan
+          login kembali!
+        </>
+      ),
       callback_failed: "Terjadi kesalahan saat login.",
       server_error: "Pembuatan akun Google gagal di server. Coba lagi.",
       access_denied: "Akses Google ditolak.",
     };
+
     setMsg(errors[urlError] || "Terjadi kesalahan. Coba lagi.");
   }, [urlError]);
 
   useEffect(() => {
-    setMsg(null);
+    const pf = sp.get("prefill");
+    if (pf) setEmail(pf.toLowerCase().trim());
+  }, [sp]);
+
+  useEffect(() => {
+    const urlError = sp.get("error");
+    if (!urlError) {
+      setMsg(null);
+    }
+
     setExists(null);
     setChecking(false);
 
@@ -95,12 +107,13 @@ export default function LoginPage() {
     }, 400);
 
     return () => clearTimeout(t);
-  }, [email, supabase]);
+  }, [email, supabase, sp]);
 
   const validateEmailNow = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
   async function loginWithEmailMagic() {
     setMsg(null);
+
     const cleanEmail = email.trim().toLowerCase();
 
     if (!validateEmailNow(cleanEmail)) {
@@ -115,7 +128,7 @@ export default function LoginPage() {
             Email ini belum terdaftar sebagai akun di Rakamin Academy.
           </span>{" "}
           <a
-            className="text-emerald-700 font-medium underline"
+            className="text-[#E11428] font-bold"
             href={`/register?prefill=${encodeURIComponent(
               cleanEmail
             )}&from=login_not_found`}
@@ -148,7 +161,7 @@ export default function LoginPage() {
               Email ini belum terdaftar sebagai akun di Rakamin Academy.
             </span>{" "}
             <a
-              className="text-emerald-700 font-medium underline"
+              className="text-[#E11428] font-bold"
               href={`/register?prefill=${encodeURIComponent(
                 cleanEmail
               )}&from=login_not_found`}
@@ -175,7 +188,8 @@ export default function LoginPage() {
         return;
       }
 
-      window.location.href = "/verify";
+      sessionStorage.setItem("pendingEmail", cleanEmail);
+      window.location.href = `/verify`;
     } finally {
       setLoading(false);
     }
@@ -215,7 +229,7 @@ export default function LoginPage() {
       </div>
 
       {msg && (
-        <div className="text-sm text-red-600 border border-red-200 bg-red-50 rounded-md p-2">
+        <div className="text-xs text-[#E11428] border border-[#F5B1B7] bg-[#FFFAFA] rounded-sm py-0.5 text-center">
           {msg}
         </div>
       )}
@@ -250,17 +264,7 @@ export default function LoginPage() {
             {checking ? (
               <span className="text-zinc-500">Memeriksa...</span>
             ) : exists === false ? (
-              <span className="text-amber-600">
-                Email belum terdaftar —{" "}
-                <a
-                  className="underline font-medium"
-                  href={`/register?prefill=${encodeURIComponent(
-                    email.trim().toLowerCase()
-                  )}&from=login_not_found`}
-                >
-                  daftar di sini
-                </a>
-              </span>
+              <span className="text-amber-600">Email belum terdaftar</span>
             ) : (
               <span className="text-emerald-600 flex items-center gap-1">
                 ✓ Email terdaftar
@@ -275,7 +279,7 @@ export default function LoginPage() {
         disabled={loading || checking}
         className="w-full h-10 rounded-lg bg-[#FBC037] hover:bg-[#fbb637] disabled:opacity-60 font-bold transform duration-300 cursor-pointer"
       >
-        {loading ? "Mengirim..." : "Daftar dengan email"}
+        {loading ? "Mengirim..." : "Kirim link"}
       </button>
 
       <div className="flex items-center gap-3 text-xs text-[#9E9E9E]">
@@ -294,7 +298,7 @@ export default function LoginPage() {
           width={24}
           height={24}
         />
-        Daftar dengan Google
+        Masuk dengan Google
       </button>
     </div>
   );
