@@ -2,6 +2,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Nunito_Sans } from "next/font/google";
+import { Toaster } from "sonner";
 
 const nunito = Nunito_Sans({
   subsets: ["latin"],
@@ -30,6 +31,13 @@ export default function RootLayout({
     >
       <body className="min-h-dvh bg-zinc-50 text-zinc-900 antialiased">
         {children}
+
+        {/* Global toaster */}
+        <Toaster
+          position="top-center"
+          richColors
+          closeButton
+        />
       </body>
     </html>
   );

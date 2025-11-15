@@ -23,3 +23,29 @@ body {
   color: var(--foreground);
   font-family: var(--font-nunito-sans), Helvetica, sans-serif;
 }
+
+.rdp--no-caption .rdp-caption,
+.rdp--no-caption .rdp-month_caption { display: none !important; }
+
+.rdp--no-caption .rdp-head_cell,
+.rdp--no-caption .rdp-weekday { text-align: center; padding-left: 0; padding-right: 0; }
+
+.rdp--no-caption th.rdp-weekday > abbr,
+.rdp--no-caption .rdp-weekday abbr {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none; 
+}
+
+.rdp--no-caption .rdp-weekday {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rdp--no-caption .rdp-day_button {
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+}
+
