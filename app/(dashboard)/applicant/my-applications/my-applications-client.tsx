@@ -28,11 +28,9 @@ export default function MyApplicationsClient({ applications }: Props) {
   if (applications.length === 0) {
     return (
       <div className="space-y-4 min-h-[calc(100vh-150px)]">
-        <h1 className="text-lg font-bold text-[#1D1F20]">
-          My Applications
-        </h1>
-        <div className="border border-zinc-200 rounded-2xl p-6 text-sm text-zinc-600 bg-white flex flex-col items-center text-center">
-          <div className="relative w-64 h-40 mb-4">
+        <h1 className="text-lg font-bold text-[#1D1F20]">My Applications</h1>
+        <div className="flex flex-col items-center justify-center py-16 text-center min-h-[calc(100vh-150px)]">
+          <div className="relative w-80 h-64 mb-6">
             <Image
               src="/images/vector-candidate.svg"
               alt="No applications yet"
@@ -40,12 +38,12 @@ export default function MyApplicationsClient({ applications }: Props) {
               className="object-contain"
             />
           </div>
-          <p className="font-semibold mb-1">
-            Belum ada aplikasi yang diajukan.
-          </p>
-          <p className="text-xs text-zinc-500 max-w-sm">
-            Lamar salah satu lowongan yang tersedia, nanti aplikasi kamu akan
-            muncul di sini.
+          <h3 className="mb-2 text-base sm:text-xl font-bold text-[#1D1F20]">
+            No applications have been submitted yet.
+          </h3>
+          <p className="max-w-md text-center text-zinc-500">
+            Apply for one of the available vacancies, and your application will
+            appear here.
           </p>
         </div>
       </div>

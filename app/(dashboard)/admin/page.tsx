@@ -51,7 +51,7 @@ export default function AdminPage() {
   const router = useRouter();
 
   async function loadJobs(reset = false) {
-    if (loading) return; // cegah double request
+    if (loading) return;
     setLoading(true);
 
     try {
@@ -91,13 +91,12 @@ export default function AdminPage() {
     }
   }
 
-  // load awal
   useEffect(() => {
-    loadJobs(true);
+    // load awal
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadJobs(true);
   }, []);
 
-  // cari berdasarkan query (debounce dikit biar ga spam)
   useEffect(() => {
     const t = setTimeout(() => {
       loadJobs(true);
@@ -161,7 +160,7 @@ export default function AdminPage() {
                       </span>
                     </div>
 
-                    {/* Title + salary + button */}
+                    {/* Title + salary + buttons */}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <h2 className="mb-1 text-lg font-bold text-[#1D1F20]">
@@ -171,15 +170,41 @@ export default function AdminPage() {
                           <p className="text-sm text-zinc-500">{salaryRange}</p>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          router.push(`/admin/manage-candidate/${job.id}`)
-                        }
-                        className="inline-flex items-center justify-center rounded-md bg-[#01959F] px-5 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(1,149,159,0.3)] hover:bg-[#017A83] transition-colors"
-                      >
-                        Manage Job
-                      </button>
+
+                      <div className="flex items-center gap-2 self-stretch sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(`/admin/manage-candidate/${job.id}`)
+                          }
+                          className="inline-flex flex-1 sm:flex-none items-center justify-center rounded-md bg-[#01959F] px-5 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(1,149,159,0.3)] hover:bg-[#017A83] transition-colors"
+                        >
+                          Manage Job
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(`/admin/edit-job/${job.id}`)
+                          }
+                          className="inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white p-2 text-zinc-600 hover:bg-zinc-50 transition-colors"
+                          aria-label="Edit job"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </article>
                 );
@@ -198,7 +223,7 @@ export default function AdminPage() {
                   <div className="flex flex-col items-center justify-center py-12 min-h-[calc(100vh-190px)]">
                     <div className="relative w-80 h-64 mb-6">
                       <Image
-                        src="/images/vector-job.svg" 
+                        src="/images/vector-job.svg"
                         alt="No job openings available"
                         fill
                         className="object-contain"
@@ -243,7 +268,6 @@ export default function AdminPage() {
           <aside className="lg:w-[300px] shrink-0">
             <div className="sticky top-20">
               <div className="relative overflow-hidden rounded-2xl shadow-md">
-                {/* Background image */}
                 <Image
                   src="/images/bg-job-open.jpg"
                   alt="Recruit the best candidates"
@@ -256,7 +280,6 @@ export default function AdminPage() {
                   style={{ backgroundColor: "rgba(0,0,0,0.72)" }}
                 />
 
-                {/* Content */}
                 <div className="relative px-5 py-5 sm:py-6 flex flex-col gap-3 text-white">
                   <div>
                     <div className="text-lg font-semibold">
@@ -280,7 +303,6 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Modal create job */}
       <JobOpeningModal open={openCreate} onClose={() => setOpenCreate(false)} />
     </main>
   );

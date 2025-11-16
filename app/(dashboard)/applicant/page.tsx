@@ -231,7 +231,7 @@ export default function ApplicantHomePage() {
 
   if (!loading && jobs.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center min-h-[calc(100vh-140px)]">
+      <div className="flex flex-col items-center justify-center py-16 text-center min-h-[calc(100vh-150px)]">
         <div className="relative w-80 h-64 mb-6">
           <Image
             src="/images/vector-job.svg"
