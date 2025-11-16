@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/src/lib/supabase/server";
 import type {
   Job,
@@ -50,10 +50,11 @@ function isProfileRequirementStatus(
 }
 
 export async function PUT(
-  req: Request,
-  ctx: { params: { jobId: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
-  const { jobId } = ctx.params;
+  const { jobId } = await params;
+
   const supabase = await createServerSupabase();
 
   const {

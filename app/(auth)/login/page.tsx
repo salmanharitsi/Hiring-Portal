@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/clients";
 import Image from "next/image";
 
-export default function LoginPage() {
+function LoginPageInner() {
   const supabase = createClient();
   const sp = useSearchParams();
 
@@ -301,5 +308,13 @@ export default function LoginPage() {
         Masuk dengan Google
       </button>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
   );
 }

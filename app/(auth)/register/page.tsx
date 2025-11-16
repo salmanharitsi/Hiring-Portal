@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/src/lib/supabase/clients";
 import Image from "next/image";
 
-export default function RegisterPage() {
+function RegisterPageInner() {
   const supabase = createClient();
   const sp = useSearchParams();
   const urlError = sp.get("error");
@@ -18,7 +25,6 @@ export default function RegisterPage() {
   const [exists, setExists] = useState<boolean | null>(null);
 
   const lastCheckedRef = useRef<string>("");
-
   const checkTokenRef = useRef(0);
 
   const origin = useMemo(() => {
@@ -286,5 +292,13 @@ export default function RegisterPage() {
         Daftar dengan Google
       </button>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterPageInner />
+    </Suspense>
   );
 }

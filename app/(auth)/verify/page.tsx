@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 
-export default function VerifyPage() {
+function VerifyPageInner() {
   const sp = useSearchParams();
   const [email, setEmail] = useState<string | null>(null);
 
@@ -17,7 +17,9 @@ export default function VerifyPage() {
     try {
       const stored = sessionStorage.getItem("pendingEmail");
       if (stored) setEmail(stored);
-    } catch {}
+    } catch {
+      // ignore
+    }
   }, [sp]);
 
   return (
@@ -39,5 +41,13 @@ export default function VerifyPage() {
         height={184}
       />
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyPageInner />
+    </Suspense>
   );
 }
