@@ -173,8 +173,8 @@ export default function DomicileSelect({
 
   const handleSelect = (opt: string) => {
     onChange(opt);
-    setQ(opt);          
-    setOpen(false);     
+    setQ(opt);
+    setOpen(false);
   };
 
   return (

@@ -2,35 +2,14 @@
 
 import ApplyFormModal from "@/src/components/modals/ApplyFormModal";
 import Image from "next/image";
-import { useMemo, useState } from "react";
-
-type WorkMode = "Onsite" | "Remote" | "Hybrid" | "Jarak Jauh";
-type Employment = "Magang" | "Kontrak" | "Penuh Waktu" | "Paruh Waktu";
-
-type Job = {
-  id: string;
-  company: string;
-  companyLogo: string;
-  companyLogoAlt: string;
-  title: string;
-  location: string;
-  postedAgo: string;
-  workMode: WorkMode;
-  employmentType: Employment;
-  level: string;
-  minSalary?: number;
-  maxSalary?: number;
-  tools?: string[];
-  skills?: string[];
-  description: string[];
-};
-
-const toIDR = (n: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(n);
+import { useEffect, useMemo, useState } from "react";
+import {
+  toIDR,
+  type WorkMode,
+  type JobStatus,
+  type Job,
+} from "@/src/data/jobs";
+import { createClient } from "@/src/lib/supabase/clients";
 
 const badgeWorkMode = (m: WorkMode) => {
   switch (m) {
@@ -46,150 +25,251 @@ const badgeWorkMode = (m: WorkMode) => {
   }
 };
 
-const badgeEmployment = (e: Employment) => {
-  switch (e) {
-    case "Magang":
+const badgeJobType = (jt: Job["jobType"]) => {
+  switch (jt) {
+    case "Internship":
       return "bg-cyan-50 text-cyan-800 font-bold";
-    case "Kontrak":
+    case "Contract":
       return "bg-fuchsia-50 text-fuchsia-800";
-    case "Penuh Waktu":
+    case "Full-time":
       return "bg-lime-50 text-lime-800";
-    case "Paruh Waktu":
+    case "Part-time":
       return "bg-amber-50 text-amber-800";
+    case "Freelance":
+      return "bg-violet-50 text-violet-800";
     default:
       return "bg-zinc-100 text-zinc-700";
   }
 };
 
-const JOBS: Job[] = [
-  {
-    id: "1",
-    company: "Rakamin",
-    companyLogo: "/logo/simple-logo-rakamin.svg",
-    companyLogoAlt: "Rakamin Logo",
-    title: "Frontend Engineer",
-    location: "Kota Yogyakarta – Daerah Istimewa Yogyakarta",
-    postedAgo: "11 jam yang lalu",
-    workMode: "Jarak Jauh",
-    employmentType: "Penuh Waktu",
-    level: "Pemula (0 - 3 tahun)",
-    minSalary: 7_500_000,
-    maxSalary: 8_700_000,
-    tools: ["TypeScript", "Playwright", "WebGL", "WebGPU"],
-    skills: ["Javascript"],
-    description: [
-      "Anda akan mengembangkan fitur produk baru bersama insinyur backend dan manajer produk menggunakan metodologi Agile.",
-      "Sebagai Product Engineer, kamu menulis kode yang bersih, efisien, dan meningkatkan pengalaman frontend produk secara bermakna.",
-      "Kolaborasi dengan tim backend untuk menjembatani antarmuka pengguna dengan solusi backend yang scalable.",
-    ],
-  },
-  {
-    id: "2",
-    company: "Rakamin",
-    companyLogo: "/logo/simple-logo-rakamin.svg",
-    companyLogoAlt: "Rakamin Logo",
-    title: "Data Analyst Intern",
-    location: "Kota Jakarta Selatan – DKI Jakarta",
-    postedAgo: "12 jam yang lalu",
-    workMode: "Hybrid",
-    employmentType: "Magang",
-    level: "Pemula (0 - 3 tahun)",
-    tools: ["Python", "Looker", "Spreadsheet/Google Sheet", "R"],
-    skills: ["PostgreSQL"],
-    description: [
-      "Membangun pipeline data end-to-end untuk menghasilkan insight yang dapat ditindaklanjuti.",
-      "Membuat dashboard yang scalable dan mudah digunakan.",
-      "Optimasi query SQL untuk performa ekstraksi data.",
-    ],
-  },
-  {
-    id: "3",
-    company: "Rakamin",
-    companyLogo: "/logo/simple-logo-rakamin.svg",
-    companyLogoAlt: "Rakamin Logo",
-    title: "Product Designer (UI/UX) Intern",
-    location: "Kota Jakarta Selatan – DKI Jakarta",
-    postedAgo: "2 hari yang lalu",
-    workMode: "Jarak Jauh",
-    employmentType: "Magang",
-    level: "Pemula (0 - 2 tahun)",
-    tools: ["Figma", "FigJam", "Framer"],
-    skills: ["Design System", "Prototyping"],
-    description: [
-      "Ubah kebutuhan pengguna ke wireframe, flow, dan prototipe yang dapat diuji.",
-      "Kolaborasi erat dengan engineer untuk implementasi pixel-perfect.",
-      "Ikut riset pengguna & usability testing untuk iterasi solusi.",
-    ],
-  },
-  {
-    id: "4",
-    company: "Rakamin",
-    companyLogo: "/logo/simple-logo-rakamin.svg",
-    companyLogoAlt: "Rakamin Logo",
-    title: "Business Development",
-    location: "Kota Jakarta Selatan – DKI Jakarta",
-    postedAgo: "3 hari yang lalu",
-    workMode: "Hybrid",
-    employmentType: "Penuh Waktu",
-    level: "Mid-Level (2 - 4 tahun)",
-    minSalary: 9_500_000,
-    maxSalary: 11_500_000,
-    tools: ["CRM", "Google Workspace"],
-    skills: ["Negotiation", "Analytics"],
-    description: [
-      "Identifikasi peluang kemitraan baru dan kelola pipeline end-to-end.",
-      "Susun proposal & materi presentasi untuk pitching.",
-      "Bekerja sama dengan tim produk & marketing untuk mencapai target growth.",
-    ],
-  },
-  {
-    id: "5",
-    company: "Rakamin",
-    companyLogo: "/logo/simple-logo-rakamin.svg",
-    companyLogoAlt: "Rakamin Logo",
-    title: "Frontend Engineer Intern",
-    location: "Kota Jakarta Selatan – DKI Jakarta",
-    postedAgo: "5 hari yang lalu",
-    workMode: "Remote",
-    employmentType: "Magang",
-    level: "Pemula (0 - 1 tahun)",
-    tools: ["Next.js", "Tailwind CSS", "Supabase"],
-    skills: ["TypeScript", "Web Performance"],
-    description: [
-      "Bangun komponen UI reusable & accessible di React/Next.js.",
-      "Integrasi API yang andal dan aman.",
-      "Performa: code-splitting, caching, dan optimasi rendering.",
-    ],
-  },
-];
+const jobTypeLabel = (jt: Job["jobType"]) => {
+  switch (jt) {
+    case "Full-time":
+      return "Penuh Waktu";
+    case "Part-time":
+      return "Paruh Waktu";
+    case "Contract":
+      return "Kontrak";
+    case "Internship":
+      return "Magang";
+    case "Freelance":
+      return "Freelance";
+    default:
+      return jt;
+  }
+};
+
+// Hanya field yang dibutuhkan halaman ini
+type ApplicantJob = {
+  id: string;
+  title: string;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  jobType: Job["jobType"];
+  description: string[];
+  company: string;
+  companyLogo: string;
+  companyLogoAlt: string;
+  location: string;
+  postedAt: string;
+  workMode: WorkMode;
+  level: string;
+  tools?: string[];
+  skills?: string[];
+};
+
+type DbJobRow = {
+  id: string;
+  title: string;
+  status: JobStatus;
+  salary_min: number | null;
+  salary_max: number | null;
+  job_type: Job["jobType"];
+  description: string[] | null;
+  company: string;
+  company_logo: string | null;
+  company_logo_alt: string | null;
+  location: string;
+  posted_at: string | null;
+  work_mode: WorkMode;
+  level: string;
+  tools: string[] | null;
+  skills: string[] | null;
+};
+
+type JobApplicationRow = {
+  job_id: string;
+};
+
+function mapRowToApplicantJob(row: DbJobRow): ApplicantJob {
+  return {
+    id: row.id,
+    title: row.title,
+    salaryMin: row.salary_min,
+    salaryMax: row.salary_max,
+    jobType: row.job_type,
+    description: row.description ?? [],
+    company: row.company,
+    companyLogo: row.company_logo ?? "/images/company-default.png",
+    companyLogoAlt: row.company_logo_alt ?? row.company,
+    location: row.location,
+    postedAt: row.posted_at ?? "",
+    workMode: row.work_mode,
+    level: row.level,
+    tools: row.tools ?? undefined,
+    skills: row.skills ?? undefined,
+  };
+}
 
 export default function ApplicantHomePage() {
-  const [activeId, setActiveId] = useState<string>(JOBS[0].id);
-  const activeJob = useMemo(
-    () => JOBS.find((j) => j.id === activeId)!,
-    [activeId]
-  );
+  const [jobs, setJobs] = useState<ApplicantJob[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [showApply, setShowApply] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
+
+  // Load jobs dari DB, hanya status = active
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("jobs")
+          .select(
+            "id, title, status, salary_min, salary_max, job_type, description, company, company_logo, company_logo_alt, location, posted_at, work_mode, level, tools, skills"
+          )
+          .eq("status", "active")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Failed to load jobs for applicant:", error);
+          setJobs([]);
+          return;
+        }
+
+        const rows = (data ?? []) as DbJobRow[];
+        const mapped = rows.map(mapRowToApplicantJob);
+        setJobs(mapped);
+
+        if (mapped.length > 0) {
+          setActiveId(mapped[0].id);
+        } else {
+          setActiveId(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void load();
+  }, []);
+
+  // Load daftar job yang sudah dilamar oleh user
+  useEffect(() => {
+    const loadApplied = async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from("job_applications")
+          .select("job_id")
+          .eq("user_id", user.id);
+
+        if (error) {
+          console.error("Failed to load applied jobs:", error);
+          return;
+        }
+
+        const rows = (data ?? []) as JobApplicationRow[];
+        const next = new Set(rows.map((row) => row.job_id));
+        setAppliedJobIds(next);
+      } catch (err) {
+        console.error("Unexpected error when loading applied jobs:", err);
+      }
+    };
+
+    void loadApplied();
+  }, []);
+
+  // callback ketika submit berhasil dari modal
+  const handleApplied = (jobId: string) => {
+    setAppliedJobIds((prev) => {
+      const next = new Set(prev);
+      next.add(jobId);
+      return next;
+    });
+  };
+
+  const activeJob = useMemo(
+    () => (activeId ? jobs.find((j) => j.id === activeId) ?? null : null),
+    [activeId, jobs]
+  );
 
   const salaryRange =
-    activeJob.minSalary && activeJob.maxSalary
-      ? `${toIDR(activeJob.minSalary)} - ${toIDR(activeJob.maxSalary)}`
-      : activeJob.minSalary
-      ? toIDR(activeJob.minSalary)
+    activeJob && activeJob.salaryMin && activeJob.salaryMax
+      ? `${toIDR(activeJob.salaryMin)} - ${toIDR(activeJob.salaryMax)}`
+      : activeJob && activeJob.salaryMin
+      ? toIDR(activeJob.salaryMin)
+      : activeJob && activeJob.salaryMax
+      ? toIDR(activeJob.salaryMax)
       : undefined;
 
+  // State: loading / kosong
+  if (loading && jobs.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-16 text-sm text-zinc-500">
+        Loading available jobs…
+      </div>
+    );
+  }
+
+  if (!loading && jobs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center min-h-[calc(100vh-140px)]">
+        <div className="relative w-80 h-64 mb-6">
+          <Image
+            src="/images/vector-job.svg"
+            alt="No job openings available"
+            fill
+            className="object-contain"
+          />
+        </div>
+        <h3 className="mb-2 text-base sm:text-xl font-bold text-[#1D1F20]">
+          No job openings available
+        </h3>
+        <p className="max-w-md text-center text-zinc-500">
+          Please wait for the next batch of openings.
+        </p>
+      </div>
+    );
+  }
+
+  if (!activeJob) {
+    return null;
+  }
+
+  const isApplied = appliedJobIds.has(activeJob.id);
+
   return (
-    <>
+    <div className="min-h-[calc(100vh-150px)]">
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 text-[#404040]">
         {/* LEFT LIST */}
         <aside className="space-y-5 max-h-[calc(60dvh-140px)] md:max-h-[calc(100dvh-140px)] overflow-auto pr-1">
-          {JOBS.map((job) => {
+          {jobs.map((job) => {
             const isActive = job.id === activeId;
             const listSalary =
-              job.minSalary && job.maxSalary
-                ? `${toIDR(job.minSalary)} - ${toIDR(job.maxSalary)}`
-                : job.minSalary
-                ? toIDR(job.minSalary)
+              job.salaryMin && job.salaryMax
+                ? `${toIDR(job.salaryMin)} - ${toIDR(job.salaryMax)}`
+                : job.salaryMin
+                ? toIDR(job.salaryMin)
+                : job.salaryMax
+                ? toIDR(job.salaryMax)
                 : null;
 
             return (
@@ -214,7 +294,7 @@ export default function ApplicantHomePage() {
                     <div className="font-bold">{job.title}</div>
                     <div className="text-xs text-zinc-500">{job.company}</div>
                     <span className="ml-auto text-zinc-400 text-[11px]">
-                      {job.postedAgo}
+                      {job.postedAt}
                     </span>
 
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
@@ -229,11 +309,11 @@ export default function ApplicantHomePage() {
                       </span>
 
                       <span
-                        className={`rounded-full px-2 py-0.5 font-bold ${badgeEmployment(
-                          job.employmentType
+                        className={`rounded-full px-2 py-0.5 font-bold ${badgeJobType(
+                          job.jobType
                         )}`}
                       >
-                        {job.employmentType}
+                        {jobTypeLabel(job.jobType)}
                       </span>
                       <span
                         className={`rounded-full px-2 py-0.5 font-bold ${badgeWorkMode(
@@ -248,7 +328,7 @@ export default function ApplicantHomePage() {
                       <div className="inline-flex items-center gap-1 text-zinc-600 mt-2">
                         <Image
                           src="/icon/money.svg"
-                          alt="Location Icon"
+                          alt="Money Icon"
                           width={14}
                           height={14}
                         />
@@ -273,7 +353,9 @@ export default function ApplicantHomePage() {
                 height={36}
               />
               <div className="min-w-0">
-                <div className="text-sm text-zinc-500">{activeJob.company}</div>
+                <div className="text-sm text-zinc-500">
+                  {activeJob.company}
+                </div>
                 <h1 className="text-xl font-bold">{activeJob.title}</h1>
                 <div className="text-sm text-zinc-500">
                   {activeJob.location} • {activeJob.workMode}
@@ -281,13 +363,21 @@ export default function ApplicantHomePage() {
               </div>
             </div>
             <div className="ml-auto w-full md:w-auto">
-            <button
-              className="rounded-md bg-[#FBC037] shadow-md px-4 py-1 font-bold hover:brightness-95 w-full text-sm cursor-pointer"
-              onClick={() => setShowApply(true)}
-              type="button"
-            >
-              Apply
-            </button>
+              <button
+                className={[
+                  "rounded-md px-4 py-1 font-bold w-full text-sm",
+                  isApplied
+                    ? "bg-zinc-200 text-zinc-500 cursor-not-allowed"
+                    : "bg-[#FBC037] text-[#1D1F20] shadow-md hover:brightness-95 cursor-pointer",
+                ].join(" ")}
+                onClick={() => {
+                  if (!isApplied) setShowApply(true);
+                }}
+                type="button"
+                disabled={isApplied}
+              >
+                {isApplied ? "Sudah dilamar" : "Apply"}
+              </button>
             </div>
           </div>
 
@@ -295,11 +385,11 @@ export default function ApplicantHomePage() {
 
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span
-              className={`inline-flex items-center text-xs font-bold px-2 py-1 rounded-full ${badgeEmployment(
-                activeJob.employmentType
+              className={`inline-flex items-center text-xs font-bold px-2 py-1 rounded-full ${badgeJobType(
+                activeJob.jobType
               )}`}
             >
-              {activeJob.employmentType}
+              {jobTypeLabel(activeJob.jobType)}
             </span>
             <span
               className={`inline-flex items-center text-xs font-bold px-2 py-1 rounded-full ${badgeWorkMode(
@@ -310,11 +400,11 @@ export default function ApplicantHomePage() {
             </span>
           </div>
 
-          {(activeJob.minSalary || activeJob.maxSalary) && (
+          {salaryRange && (
             <div className="mt-5 flex items-center gap-2 text-zinc-700">
               <Image
                 src="/icon/money.svg"
-                alt="Location Icon"
+                alt="Money Icon"
                 width={17}
                 height={17}
               />
@@ -366,9 +456,11 @@ export default function ApplicantHomePage() {
       <ApplyFormModal
         open={showApply}
         onClose={() => setShowApply(false)}
+        jobId={activeJob.id}
         jobTitle={activeJob.title}
         company={activeJob.company}
+        onApplied={handleApplied}
       />
-    </>
+    </div>
   );
 }

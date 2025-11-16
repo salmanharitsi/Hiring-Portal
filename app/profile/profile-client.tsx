@@ -24,6 +24,7 @@ type Initial = {
   linkedin: string;
   dob: string;
   photo_url: string | null;
+  gender: "male" | "female" | null;
 };
 
 type FieldErrorKey =
@@ -33,7 +34,8 @@ type FieldErrorKey =
   | "domicile"
   | "phone"
   | "email"
-  | "linkedin";
+  | "linkedin"
+  | "gender";
 
 type FieldErrors = Partial<Record<FieldErrorKey, string>>;
 
@@ -63,8 +65,8 @@ export default function ProfileClient({
 }
 
 function parseInitialPhone(raw: string | null | undefined): {
-  iso2: string;   
-  digits: string; 
+  iso2: string;
+  digits: string;
 } {
   if (!raw) {
     return { iso2: "ID", digits: "" };
@@ -80,9 +82,7 @@ function parseInitialPhone(raw: string | null | undefined): {
     };
   }
 
-  const digits = trimmed
-    .slice(matched.dial.length) 
-    .replace(/[^\d]/g, "");     
+  const digits = trimmed.slice(matched.dial.length).replace(/[^\d]/g, "");
 
   return { iso2: matched.iso2, digits };
 }
@@ -93,7 +93,6 @@ function buildPhone(iso2: string, digits: string): string {
   if (!c) return `+${digits}`;
   return `${c.dial}${digits}`;
 }
-
 
 /* ===================== ADMIN ===================== */
 
@@ -133,7 +132,7 @@ function AdminProfileCard({
   }, [safeName]);
 
   return (
-    <section className="mx-auto max-w-3xl">
+    <section className="mx-auto max-w-3xl min-h-[calc(100vh-150px)]">
       <header className="mb-6">
         <h1 className="text-xl font-bold text-[#1D1F20]">Profile</h1>
         <p className="text-sm text-zinc-500">Administrator account</p>
@@ -229,6 +228,12 @@ function ApplicantProfileForm({
   const [phoneDigits, setPhoneDigits] = useState(parsedPhone.digits);
   const [phoneCountry, setPhoneCountry] = useState(parsedPhone.iso2);
 
+  const [gender, setGender] = useState<"male" | "female" | "">(
+    initial.gender === "male" || initial.gender === "female"
+      ? initial.gender
+      : ""
+  );
+
   // STATE ERROR
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -255,6 +260,14 @@ function ApplicantProfileForm({
     if (!dob) return;
     setFieldErrors((prev) => (prev.dob ? { ...prev, dob: undefined } : prev));
   }, [dob]);
+
+  // gender
+  useEffect(() => {
+    if (!gender) return;
+    setFieldErrors((prev) =>
+      prev.gender ? { ...prev, gender: undefined } : prev
+    );
+  }, [gender]);
 
   // domicile
   useEffect(() => {
@@ -306,6 +319,7 @@ function ApplicantProfileForm({
     if (!phoneDigits.trim()) newErrors.phone = "Phone number is required.";
     if (!email.trim()) newErrors.email = "Email is required.";
     if (!linkedin.trim()) newErrors.linkedin = "LinkedIn URL is required.";
+    if (!gender) newErrors.gender = "Gender is required.";
 
     if (Object.keys(newErrors).length > 0) {
       setFieldErrors(newErrors);
@@ -318,12 +332,13 @@ function ApplicantProfileForm({
 
     const payload = {
       full_name: fullName.trim(),
-      photo_url: photo, 
+      photo_url: photo,
       dob,
       domicile,
       phone: phoneWithCode,
       email: email.trim(),
       linkedin: linkedin.trim(),
+      gender,
     };
 
     try {
@@ -431,6 +446,42 @@ function ApplicantProfileForm({
               <p className="mt-1 text-[11px] text-red-500">{fieldErrors.dob}</p>
             )}
           </label>
+
+          {/* Pronoun / Gender */}
+          <fieldset className="mb-5">
+            <legend className="block text-xs text-gray-700 mb-3 font-medium">
+              Pronoun (gender)<span className="text-red-600">*</span>
+            </legend>
+            <div className="flex items-center gap-8 text-[#404040]">
+              <label className="inline-flex items-center gap-2.5 text-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name="gender"
+                  value="female"
+                  checked={gender === "female"}
+                  onChange={() => setGender("female")}
+                  className="w-4 h-4 accent-teal-600"
+                />
+                <span>She/her (Female)</span>
+              </label>
+              <label className="inline-flex items-center gap-2.5 text-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name="gender"
+                  value="male"
+                  checked={gender === "male"}
+                  onChange={() => setGender("male")}
+                  className="w-4 h-4 accent-teal-600"
+                />
+                <span>He/him (Male)</span>
+              </label>
+            </div>
+            {fieldErrors.gender && (
+              <p className="mt-1 text-[11px] text-red-500">
+                {fieldErrors.gender}
+              </p>
+            )}
+          </fieldset>
 
           {/* Domicile */}
           <label className="block mb-5">

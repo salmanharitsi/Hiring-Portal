@@ -17,7 +17,7 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "full_name, email, domicile, phone, linkedin, dob, photo_url"
+      "full_name, email, domicile, phone, linkedin, dob, photo_url, gender"
     )
     .eq("id", user.id)
     .single();
@@ -34,6 +34,7 @@ export default async function ProfilePage() {
         linkedin: profile?.linkedin ?? "",
         dob: profile?.dob ?? "",
         photo_url: profile?.photo_url ?? null,
+        gender: profile?.gender ?? null,
       }}
     />
   );

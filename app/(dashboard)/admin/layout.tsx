@@ -28,10 +28,7 @@ export default async function ApplicantLayout({
   return (
     <div className="min-h-dvh bg-white">
       <Navbar
-        items={[
-          { label: "Job List", href: "/admin" },
-          { label: "Candidates", href: "/admin/manage-candidates/1" },
-        ]}
+        items={[]}
         avatarUrl={user.user_metadata?.avatar_url ?? null}
         displayName={profile?.full_name ?? user.email}
       />

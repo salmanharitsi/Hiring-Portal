@@ -1,78 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SearchField from "@/src/components/form/SearchField";
 import Image from "next/image";
-
-type JobStatus = "active" | "inactive" | "draft";
-
-type Job = {
-  id: number;
-  title: string;
-  status: JobStatus;
-  startedOn: string;
-  salaryMin: string;
-  salaryMax: string;
-};
-
-const JOBS: Job[] = [
-  {
-    id: 1,
-    title: "Front End Developer",
-    status: "active",
-    startedOn: "started on 1 Oct 2025",
-    salaryMin: "Rp7.000.000",
-    salaryMax: "Rp8.000.000",
-  },
-  {
-    id: 2,
-    title: "Data Scientist",
-    status: "inactive",
-    startedOn: "started on 2 Oct 2025",
-    salaryMin: "Rp7.000.000",
-    salaryMax: "Rp12.500.000",
-  },
-  {
-    id: 3,
-    title: "Data Scientist",
-    status: "draft",
-    startedOn: "started on 3 Sep 2025",
-    salaryMin: "Rp7.000.000",
-    salaryMax: "Rp12.500.000",
-  },
-  {
-    id: 4,
-    title: "Backend Engineer",
-    status: "active",
-    startedOn: "started on 10 Sep 2025",
-    salaryMin: "Rp8.000.000",
-    salaryMax: "Rp11.000.000",
-  },
-  {
-    id: 5,
-    title: "Product Manager",
-    status: "inactive",
-    startedOn: "started on 18 Aug 2025",
-    salaryMin: "Rp10.000.000",
-    salaryMax: "Rp15.000.000",
-  },
-  {
-    id: 6,
-    title: "QA Engineer",
-    status: "draft",
-    startedOn: "started on 25 Jul 2025",
-    salaryMin: "Rp6.000.000",
-    salaryMax: "Rp9.000.000",
-  },
-  {
-    id: 7,
-    title: "UI/UX Designer",
-    status: "active",
-    startedOn: "started on 5 Jul 2025",
-    salaryMin: "Rp7.500.000",
-    salaryMax: "Rp10.000.000",
-  },
-];
+import JobOpeningModal from "@/src/components/modals/JobOpeningModal";
+import { toIDR, type JobStatus } from "@/src/data/jobs";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/src/lib/supabase/clients";
 
 const STATUS_STYLE: Record<
   JobStatus,
@@ -95,23 +29,91 @@ const STATUS_STYLE: Record<
   },
 };
 
+const PAGE_SIZE = 10;
+
+type DbJob = {
+  id: string;
+  title: string;
+  status: JobStatus;
+  started_at: string | null;
+  salary_min: number | null;
+  salary_max: number | null;
+};
+
 export default function AdminPage() {
   const [query, setQuery] = useState("");
+  const [openCreate, setOpenCreate] = useState(false);
+  const [jobs, setJobs] = useState<DbJob[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const filteredJobs = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return JOBS;
-    return JOBS.filter((j) => j.title.toLowerCase().includes(q));
+  const router = useRouter();
+
+  async function loadJobs(reset = false) {
+    if (loading) return; // cegah double request
+    setLoading(true);
+
+    try {
+      const supabase = createClient();
+      const trimmed = query.trim();
+      const from = reset ? 0 : offset;
+      const to = from + PAGE_SIZE - 1;
+
+      let q = supabase
+        .from("jobs")
+        .select("id, title, status, started_at, salary_min, salary_max", {
+          count: "exact",
+        })
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      if (trimmed) {
+        q = q.ilike("title", `%${trimmed}%`);
+      }
+
+      const { data, error, count } = await q;
+
+      if (error) {
+        console.error("Failed to load jobs:", error);
+        return;
+      }
+
+      const rows = (data ?? []) as DbJob[];
+
+      setJobs((prev) => (reset ? rows : [...prev, ...rows]));
+
+      const newOffset = from + rows.length;
+      setOffset(newOffset);
+      setHasMore((count ?? 0) > newOffset);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // load awal
+  useEffect(() => {
+    loadJobs(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // cari berdasarkan query (debounce dikit biar ga spam)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      loadJobs(true);
+    }, 400);
+
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
+  const displayedJobs = useMemo(() => jobs, [jobs]);
+
   return (
-    <main className="">
+    <main className="min-h-[calc(100vh-150px)]">
       <div className="mx-auto max-w-6xl">
-        {/* Layout */}
         <div className="flex flex-col gap-4 lg:flex-row">
-          {/* LEFT: search + list */}
           <div className="flex-1">
-            {/* Sticky search */}
             <div className="pb-5">
               <SearchField
                 value={query}
@@ -121,10 +123,27 @@ export default function AdminPage() {
               />
             </div>
 
-            {/* Scrollable job cards */}
             <div className="space-y-4 max-h-[calc(100vh-170px)] overflow-y-auto pr-1 pb-4">
-              {filteredJobs.map((job) => {
+              {displayedJobs.map((job) => {
                 const styles = STATUS_STYLE[job.status];
+
+                const salaryRange =
+                  job.salary_min && job.salary_max
+                    ? `${toIDR(job.salary_min)} - ${toIDR(job.salary_max)}`
+                    : job.salary_min
+                    ? toIDR(job.salary_min)
+                    : job.salary_max
+                    ? toIDR(job.salary_max)
+                    : null;
+
+                const startedOnLabel = job.started_at
+                  ? new Date(job.started_at).toLocaleDateString("id-ID", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "—";
+
                 return (
                   <article
                     key={job.id}
@@ -138,7 +157,7 @@ export default function AdminPage() {
                         {styles.label}
                       </span>
                       <span className="inline-flex items-center rounded-sm border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] text-zinc-600">
-                        {job.startedOn}
+                        {startedOnLabel}
                       </span>
                     </div>
 
@@ -148,12 +167,15 @@ export default function AdminPage() {
                         <h2 className="mb-1 text-lg font-bold text-[#1D1F20]">
                           {job.title}
                         </h2>
-                        <p className="text-sm text-zinc-500">
-                          {job.salaryMin} - {job.salaryMax}
-                        </p>
+                        {salaryRange && (
+                          <p className="text-sm text-zinc-500">{salaryRange}</p>
+                        )}
                       </div>
                       <button
                         type="button"
+                        onClick={() =>
+                          router.push(`/admin/manage-candidate/${job.id}`)
+                        }
                         className="inline-flex items-center justify-center rounded-md bg-[#01959F] px-5 py-2 text-xs font-semibold text-white shadow-[0_2px_4px_rgba(1,149,159,0.3)] hover:bg-[#017A83] transition-colors"
                       >
                         Manage Job
@@ -163,10 +185,55 @@ export default function AdminPage() {
                 );
               })}
 
-              {filteredJobs.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-zinc-200 bg-white/70 px-6 py-8 text-center text-sm text-zinc-500">
-                  No job found for{" "}
-                  <span className="font-semibold">&ldquo;{query}&rdquo;</span>.
+              {/* State: tidak ada data */}
+              {!loading &&
+                displayedJobs.length === 0 &&
+                (query.trim() ? (
+                  <div className="rounded-2xl border border-dashed border-zinc-200 bg-white/70 px-6 py-8 text-center text-sm text-zinc-500">
+                    No job found for{" "}
+                    <span className="font-semibold">&ldquo;{query}&rdquo;</span>
+                    .
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 min-h-[calc(100vh-190px)]">
+                    <div className="relative w-80 h-64 mb-6">
+                      <Image
+                        src="/images/vector-job.svg" 
+                        alt="No job openings available"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+
+                    <h3 className="mb-2 text-base sm:text-xl font-bold text-[#1D1F20]">
+                      No job openings available
+                    </h3>
+
+                    <p className="mb-4 max-w-md text-center text-zinc-500">
+                      Create a job opening now and start the candidate process.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => setOpenCreate(true)}
+                      className="inline-flex items-center justify-center rounded-lg bg-[#F9A826] px-6 py-2.5 text-sm font-semibold text-[#1D1F20] shadow-[0_4px_10px_rgba(249,168,38,0.4)] hover:bg-[#F18F0A] transition-colors"
+                    >
+                      Create a new job
+                    </button>
+                  </div>
+                ))}
+
+              {/* Load more */}
+              {hasMore && (
+                <div className="pt-2 flex justify-center">
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => loadJobs(false)}
+                    className="inline-flex items-center justify-center rounded-md border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+                  >
+                    {loading ? "Loading..." : "Load more jobs"}
+                  </button>
                 </div>
               )}
             </div>
@@ -201,6 +268,7 @@ export default function AdminPage() {
                   </div>
                   <button
                     type="button"
+                    onClick={() => setOpenCreate(true)}
                     className="mt-1 inline-flex items-center justify-center rounded-md bg-[#00A2B8] px-4 py-2 font-semibold text-white hover:bg-[#01889A] transition-colors"
                   >
                     Create a new job
@@ -211,6 +279,9 @@ export default function AdminPage() {
           </aside>
         </div>
       </div>
+
+      {/* Modal create job */}
+      <JobOpeningModal open={openCreate} onClose={() => setOpenCreate(false)} />
     </main>
   );
 }

@@ -28,10 +28,7 @@ export default async function ProfileLayout({
 
   const items =
     role === "admin"
-      ? [
-          { label: "Job List", href: "/admin" },
-          { label: "Candidates", href: "/admin/candidates" },
-        ]
+      ? []
       : [
           { label: "Job List", href: "/applicant" },
           { label: "My Applications", href: "/applicant/my-applications" },

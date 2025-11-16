@@ -1,19 +1,27 @@
-// app/api/profile/route.ts
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/src/lib/supabase/server";
+
+type Gender = "male" | "female";
 
 interface ProfilePayload {
   full_name: string;
   photo_url: string;
-  dob: string;       // dalam bentuk "YYYY-MM-DD"
+  dob: string; // "YYYY-MM-DD"
   domicile: string;
   phone: string;
   linkedin: string;
+  gender: Gender;
 }
 
 type ValidationErrors = Partial<Record<keyof ProfilePayload, string>>;
 
-function validatePayload(body: unknown): { data?: ProfilePayload; errors?: ValidationErrors } {
+function isGender(value: unknown): value is Gender {
+  return value === "male" || value === "female";
+}
+
+function validatePayload(
+  body: unknown
+): { data?: ProfilePayload; errors?: ValidationErrors } {
   if (typeof body !== "object" || body === null) {
     return { errors: { full_name: "Invalid request body" } };
   }
@@ -25,6 +33,7 @@ function validatePayload(body: unknown): { data?: ProfilePayload; errors?: Valid
     domicile,
     phone,
     linkedin,
+    gender,
   } = body as Record<string, unknown>;
 
   const errors: ValidationErrors = {};
@@ -61,6 +70,11 @@ function validatePayload(body: unknown): { data?: ProfilePayload; errors?: Valid
     errors.linkedin = "LinkedIn URL is required.";
   }
 
+  // gender
+  if (!isGender(gender)) {
+    errors.gender = "Gender is required.";
+  }
+
   if (Object.keys(errors).length > 0) {
     return { errors };
   }
@@ -73,6 +87,7 @@ function validatePayload(body: unknown): { data?: ProfilePayload; errors?: Valid
       domicile: (domicile as string).trim(),
       phone: (phone as string).trim(),
       linkedin: (linkedin as string).trim(),
+      gender: gender as Gender,
     },
   };
 }
@@ -80,7 +95,6 @@ function validatePayload(body: unknown): { data?: ProfilePayload; errors?: Valid
 export async function PUT(request: Request) {
   const supabase = await createServerSupabase();
 
-  // pastikan user login
   const {
     data: { user },
     error: authError,
@@ -93,7 +107,7 @@ export async function PUT(request: Request) {
     );
   }
 
-  const body = await request.json();
+  const body = (await request.json()) as unknown;
   const { data, errors } = validatePayload(body);
 
   if (errors) {
@@ -103,21 +117,22 @@ export async function PUT(request: Request) {
     );
   }
 
-  // data sudah tervalidasi
-  const { full_name, photo_url, dob, domicile, phone, linkedin } = data as ProfilePayload;
+  const { full_name, photo_url, dob, domicile, phone, linkedin, gender } =
+    data as ProfilePayload;
 
   const { data: updatedProfile, error: dbError } = await supabase
     .from("profiles")
     .update({
       full_name,
       photo_url,
-      dob,          // kolom tipe date di Supabase; string "YYYY-MM-DD" valid
+      dob,
       domicile,
       phone,
       linkedin,
+      gender,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", user.id) // hanya boleh update profile miliknya sendiri
+    .eq("id", user.id)
     .select()
     .single();
 
