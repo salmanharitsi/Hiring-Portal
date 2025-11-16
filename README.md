@@ -129,7 +129,7 @@ It covers the full flow from job discovery and application submission to admin-s
 > Replace with your deployment URL or demo video.
 
 ```text
-https://your-demo-url-here.com
+https://hiring-portal-v01.vercel.app/
 ```
 
 ---
