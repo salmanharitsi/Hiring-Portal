@@ -126,11 +126,9 @@ It covers the full flow from job discovery and application submission to admin-s
 
 ## Demo
 
-> Replace with your deployment URL or demo video.
-
-```text
-https://hiring-portal-v01.vercel.app/
-```
+<a href="https://hiring-portal-v01.vercel.app/" target="_blank">
+     https://hiring-portal-v01.vercel.app/
+</a>
 
 ---
 
