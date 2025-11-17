@@ -62,6 +62,8 @@ export default function Navbar({
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
+  const [userRole, setUserRole] = useState<string | null>(null);
+
   const [derivedEmail, setDerivedEmail] = useState<string | null>(
     email ?? null
   );
@@ -106,6 +108,8 @@ export default function Navbar({
         if (cancelled) return;
 
         const roleFromDb = (profile?.role as string | undefined) ?? null;
+
+        setUserRole(roleFromDb);
 
         const nameFromProfile = profile?.full_name;
         const nameFromMeta = metadata.full_name;
@@ -208,20 +212,22 @@ export default function Navbar({
         {/* Right cluster */}
         <div className="relative flex items-center gap-2">
           {/* Hamburger (mobile only) */}
-          <button
-            className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-zinc-200 hover:bg-zinc-50"
-            aria-label="Toggle menu"
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M4 6h16M4 12h16M4 18h16"
-                stroke="#374151"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
+          {userRole === "applicant" && (
+            <button
+              className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-zinc-200 hover:bg-zinc-50"
+              aria-label="Toggle menu"
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M4 6h16M4 12h16M4 18h16"
+                  stroke="#374151"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          )}
 
           {/* Avatar + dropdown */}
           <div
